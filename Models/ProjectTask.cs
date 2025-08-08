@@ -28,7 +28,6 @@ namespace TimeSheetAPI.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
         // Navigation properties
-        public virtual ProjectLevel Level { get; set; }
         public virtual ProjectLevel ProjectLevel { get; set; }
         public virtual ICollection<ProjectSubtask> ProjectSubtasks { get; set; } = new List<ProjectSubtask>();
     }

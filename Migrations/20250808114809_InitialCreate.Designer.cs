@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TimeSheetAPI.Data;
 
@@ -11,9 +12,11 @@ using TimeSheetAPI.Data;
 namespace TimeSheetAPI.Migrations
 {
     [DbContext(typeof(TimeFlowDbContext))]
-    partial class TimeFlowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250808114809_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,12 +224,17 @@ namespace TimeSheetAPI.Migrations
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ProjectId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectId1");
 
                     b.ToTable("ProjectLevels");
                 });
@@ -250,6 +258,9 @@ namespace TimeSheetAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("ProjectTaskId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uniqueidentifier");
@@ -282,6 +293,9 @@ namespace TimeSheetAPI.Migrations
                     b.Property<Guid>("LevelId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("LevelId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -293,6 +307,8 @@ namespace TimeSheetAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LevelId");
+
+                    b.HasIndex("LevelId1");
 
                     b.ToTable("ProjectTasks");
                 });
@@ -688,11 +704,15 @@ namespace TimeSheetAPI.Migrations
 
             modelBuilder.Entity("TimeSheetAPI.Models.ProjectLevel", b =>
                 {
-                    b.HasOne("TimeSheetAPI.Models.Project", "Project")
+                    b.HasOne("TimeSheetAPI.Models.Project", null)
                         .WithMany("ProjectLevels")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TimeSheetAPI.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId1");
 
                     b.Navigation("Project");
                 });
@@ -715,6 +735,12 @@ namespace TimeSheetAPI.Migrations
                         .HasForeignKey("LevelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TimeSheetAPI.Models.ProjectLevel", "Level")
+                        .WithMany()
+                        .HasForeignKey("LevelId1");
+
+                    b.Navigation("Level");
 
                     b.Navigation("ProjectLevel");
                 });

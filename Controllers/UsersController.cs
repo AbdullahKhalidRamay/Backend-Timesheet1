@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TimeSheetAPI.Models;
+using TimeSheetAPI.Models.DTOs;
 using TimeSheetAPI.Services;
 
 namespace TimeSheetAPI.Controllers
@@ -21,15 +22,28 @@ namespace TimeSheetAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        [Authorize(Roles = "owner,manager")]
+        public async Task<ActionResult<List<UserDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            var userDtos = users.Select(u => new UserDto
+            {
+                Id = u.Id,
+                Email = u.Email,
+                Name = u.Name,
+                Role = u.Role,
+                JobTitle = u.JobTitle,
+                BillableRate = u.BillableRate ?? 0,
+                AvailableHours = u.AvailableHours,
+                TotalBillableHours = u.TotalBillableHours,
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt
+            }).ToList();
+            return Ok(userDtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(Guid id)
+        public async Task<ActionResult<UserDetailDto>> GetUserById(Guid id)
         {
             var user = await _userService.GetUserByIdAsync(id);
 
@@ -42,16 +56,77 @@ namespace TimeSheetAPI.Controllers
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
-            if (currentUserId != id.ToString() && currentUserRole != "Admin" && currentUserRole != "Manager")
+            if (currentUserId != id.ToString() && currentUserRole != "owner" && currentUserRole != "manager")
             {
                 return Forbid();
             }
 
-            return Ok(user);
+            var userDetailDto = new UserDetailDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Role = user.Role,
+                JobTitle = user.JobTitle,
+                BillableRate = user.BillableRate ?? 0,
+                AvailableHours = user.AvailableHours,
+                TotalBillableHours = user.TotalBillableHours,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                FirstName = user.FirstName,
+                LastName = user.LastName
+            };
+
+            return Ok(userDetailDto);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "owner")]
+        public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var user = new User
+                {
+                    Email = request.Email,
+                    Name = request.Name,
+                    Role = request.Role,
+                    JobTitle = request.JobTitle,
+                    BillableRate = request.BillableRate,
+                    AvailableHours = request.AvailableHours
+                };
+
+                var createdUser = await _userService.CreateUserAsync(user, request.Password);
+
+                var userDto = new UserDto
+                {
+                    Id = createdUser.Id,
+                    Email = createdUser.Email,
+                    Name = createdUser.Name,
+                    Role = createdUser.Role,
+                    JobTitle = createdUser.JobTitle,
+                    BillableRate = createdUser.BillableRate ?? 0,
+                    AvailableHours = createdUser.AvailableHours,
+                    TotalBillableHours = createdUser.TotalBillableHours,
+                    CreatedAt = createdUser.CreatedAt,
+                    UpdatedAt = createdUser.UpdatedAt
+                };
+
+                return CreatedAtAction(nameof(GetUserById), new { id = userDto.Id }, userDto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserModel model)
+        public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -62,7 +137,7 @@ namespace TimeSheetAPI.Controllers
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
-            if (currentUserId != id.ToString() && currentUserRole != "Admin")
+            if (currentUserId != id.ToString() && currentUserRole != "owner")
             {
                 return Forbid();
             }
@@ -75,22 +150,36 @@ namespace TimeSheetAPI.Controllers
             }
 
             // Update user properties
-            user.Name = model.Name ?? user.Name;
-            user.Email = model.Email ?? user.Email;
-            user.JobTitle = model.JobTitle ?? user.JobTitle;
-            user.BillableRate = model.BillableRate ?? user.BillableRate;
-            user.AvailableHours = model.AvailableHours ?? user.AvailableHours;
+            user.Name = request.Name ?? user.Name;
+            user.JobTitle = request.JobTitle ?? user.JobTitle;
+            user.BillableRate = request.BillableRate ?? user.BillableRate;
+            user.AvailableHours = request.AvailableHours ?? user.AvailableHours;
 
-            // Only admin can update role
-            if (currentUserRole == "Admin" && model.Role != null)
+            // Only owner can update role
+            if (currentUserRole == "owner" && request.Role != null)
             {
-                user.Role = model.Role;
+                user.Role = request.Role;
             }
 
             try
             {
                 await _userService.UpdateUserAsync(user);
-                return NoContent();
+                
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Role = user.Role,
+                    JobTitle = user.JobTitle,
+                                    BillableRate = user.BillableRate ?? 0,
+                AvailableHours = user.AvailableHours,
+                    TotalBillableHours = user.TotalBillableHours,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                };
+
+                return Ok(userDto);
             }
             catch (InvalidOperationException ex)
             {
@@ -99,8 +188,8 @@ namespace TimeSheetAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteUser(Guid id)
+        [Authorize(Roles = "owner")]
+        public async Task<ActionResult> DeleteUser(Guid id)
         {
             var user = await _userService.GetUserByIdAsync(id);
 
@@ -119,15 +208,28 @@ namespace TimeSheetAPI.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpGet("{id}/timesheet")]
+        [Authorize]
+        public async Task<ActionResult<TimesheetDto>> GetUserTimesheet(Guid id, DateTime startDate, DateTime endDate)
+        {
+            // TODO: Implement timesheet functionality
+            return Ok(new TimesheetDto
+            {
+                UserId = id,
+                StartDate = startDate,
+                EndDate = endDate,
+                TimeEntries = new List<TimeEntryDto>(),
+                TotalHours = 0,
+                BillableHours = 0,
+                NonBillableHours = 0,
+                TotalEntries = 0,
+                PendingEntries = 0,
+                ApprovedEntries = 0,
+                RejectedEntries = 0
+            });
+        }
     }
 
-    public class UpdateUserModel
-    {
-        public string? Name { get; set; }
-        public string? Email { get; set; }
-        public string? Role { get; set; }
-        public string? JobTitle { get; set; }
-        public decimal? BillableRate { get; set; }
-        public int? AvailableHours { get; set; }
-    }
+
 }

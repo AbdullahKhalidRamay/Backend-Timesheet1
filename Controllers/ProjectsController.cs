@@ -484,7 +484,7 @@ namespace TimeSheetAPI.Controllers
 
             var subtask = new ProjectSubtask
             {
-                ProjectTaskId = taskId,
+                TaskId = taskId,
                 Name = model.Name,
                 Description = model.Description,
                 IsActive = model.IsActive

@@ -84,13 +84,19 @@ namespace TimeSheetAPI.Data
             // Configure cascade delete behavior
             modelBuilder.Entity<Project>()
                 .HasMany(p => p.ProjectLevels)
-                .WithOne()
+                .WithOne(pl => pl.Project)
                 .HasForeignKey(pl => pl.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
                 
             modelBuilder.Entity<ProjectLevel>()
                 .HasMany(pl => pl.ProjectTasks)
                 .WithOne(pt => pt.ProjectLevel)
+                .HasForeignKey(pt => pt.LevelId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<ProjectTask>()
+                .HasOne(pt => pt.ProjectLevel)
+                .WithMany(pl => pl.ProjectTasks)
                 .HasForeignKey(pt => pt.LevelId)
                 .OnDelete(DeleteBehavior.Cascade);
                 

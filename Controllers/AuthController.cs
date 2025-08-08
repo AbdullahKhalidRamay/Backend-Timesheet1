@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using TimeSheetAPI.Models;
+using TimeSheetAPI.Models.DTOs;
 using TimeSheetAPI.Services;
 
 namespace TimeSheetAPI.Controllers
@@ -109,6 +110,36 @@ namespace TimeSheetAPI.Controllers
                 AvailableHours = user.AvailableHours,
                 TotalBillableHours = user.TotalBillableHours
             });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            // In a real application, you might want to blacklist the token
+            // For now, we'll just return a success response
+            return Ok(new { Message = "Logged out successfully" });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] string email)
+        {
+            // TODO: Implement password reset functionality
+            return Ok(new { Message = "Password reset email sent" });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            // TODO: Implement password reset functionality
+            return Ok(new { Message = "Password reset successfully" });
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            // TODO: Implement password change functionality
+            return Ok(new { Message = "Password changed successfully" });
         }
     }
 

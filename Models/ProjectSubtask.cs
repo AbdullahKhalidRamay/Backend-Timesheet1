@@ -11,10 +11,6 @@ namespace TimeSheetAPI.Models
         [Required]
         public Guid TaskId { get; set; }
         
-        // Added property to match controller usage
-        [Required]
-        public Guid ProjectTaskId { get; set; }
-        
         [Required]
         [StringLength(100)]
         public string Name { get; set; }

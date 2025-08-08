@@ -46,6 +46,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Configure Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireOwnerRole", policy => 
+        policy.RequireRole("owner"));
+    
+    options.AddPolicy("RequireManagerRole", policy => 
+        policy.RequireRole("owner", "manager"));
+});
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {
@@ -102,6 +112,9 @@ app.UseHttpsRedirection();
 
 // Use CORS
 app.UseCors("AllowAll");
+
+// Global exception handling
+app.UseExceptionHandler("/error");
 
 // Use Authentication and Authorization
 app.UseAuthentication();

@@ -250,7 +250,7 @@ namespace TimeSheetAPI.Data
 
                     var subtask = new ProjectSubtask
                     {
-                        ProjectTaskId = task.Id,
+                        TaskId = task.Id,
                         Name = "User Authentication",
                         Description = "Implement JWT authentication",
                         IsActive = true,
